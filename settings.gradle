@@ -1,0 +1,11 @@
+rootProject.name = 'istio-test-projects'
+
+include ':callme'
+
+include ':caller'
+
+
+
+project(':callme').projectDir = "$rootDir/callme" as File
+
+project(':caller').projectDir = "$rootDir/caller" as File

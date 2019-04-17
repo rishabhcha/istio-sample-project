@@ -1,0 +1,16 @@
+description = ''
+
+dependencies {
+    
+}
+
+
+bootJar {
+    enabled = true
+}
+
+jar {
+    enabled = false
+}
+
+    

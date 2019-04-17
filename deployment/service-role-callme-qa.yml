@@ -1,0 +1,9 @@
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRole
+metadata:
+  name: callme-role
+  namespace: qa
+spec:
+  rules:
+    - services: ["callme-service.qa.svc.cluster.local"]
+      methods: ["*"]

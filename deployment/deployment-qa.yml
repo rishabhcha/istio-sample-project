@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: callme-service
+  namespace: qa
+  labels:
+    app: callme-service
+spec:
+  ports:
+    - port: 8091
+      name: http
+  selector:
+    app: callme-service
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: callme-service-v1
+  namespace: qa
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: callme-service
+        version: v1
+    spec:
+      containers:
+        - name: callme-service
+          image: docker08.helpchat.in:5000/test-istio:s1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8091
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: caller-service
+  namespace: qa
+  labels:
+    app: caller-service
+spec:
+  ports:
+    - port: 8090
+      name: http
+  selector:
+    app: caller-service
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: caller-service-v1
+  namespace: qa
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: caller-service
+        version: v1
+    spec:
+      serviceAccountName: callme-sa
+      containers:
+        - name: caller-service
+          image: docker08.helpchat.in:5000/test-istio:s2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+---
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: caller-service-v2
+  namespace: qa
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: caller-service
+        version: v2
+    spec:
+      containers:
+        - name: caller-service
+          image: docker08.helpchat.in:5000/test-istio:s3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8090
+
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: callme-service
+  namespace: qa
+spec:
+  hosts:
+    - "callme.172.16.1.0.nip.io"
+  gateways:
+    - qa-gateway
+  http:
+    - route:
+        - destination:
+            port:
+              number: 8091
+            host: callme-service
+
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: caller-service
+  namespace: qa
+spec:
+  hosts:
+    - "caller.172.16.1.0.nip.io"
+  gateways:
+    - qa-gateway
+  http:
+    - route:
+        - destination:
+            port:
+              number: 8090
+            host: caller-service

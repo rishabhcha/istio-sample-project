@@ -1,0 +1,160 @@
+buildscript {
+
+ext { springBootVersion = '2.0.6.RELEASE' }
+    
+dependencies {
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven { url "https://repo.spring.io/plugins-release" }
+        maven { url "https://plugins.gradle.org/m2" }
+    }
+        classpath(group: 'org.jfrog.buildinfo', name: 'build-info-extractor-gradle', version: '4.+')
+
+        classpath(group: 'net.ltgt.gradle', name: 'gradle-apt-plugin', version: '0.19')
+    
+        classpath (group:  'org.springframework.boot', name: 'spring-boot-gradle-plugin', version: "${springBootVersion}")
+    
+    }
+}
+
+
+allprojects {
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'net.ltgt.apt'
+apply plugin: 'net.ltgt.apt-idea'
+apply plugin: 'net.ltgt.apt-eclipse'  
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management' 
+
+group = 'com.gonuclei'
+version = '1.0.0-SNAPSHOT'
+
+apply plugin: 'checkstyle'
+
+tasks.withType(Checkstyle) {
+    showViolations true
+    exclude '**/grpc/**'
+}
+checkstyle {
+    toolVersion '8.11'
+    sourceSets = [project.sourceSets.main]
+}
+// Fails gradle build when checkstyle violation occurs
+tasks.withType(Checkstyle).each { checkstyleTask ->
+    checkstyleTask.doLast {
+        reports.all { report ->
+                def outputFile = report.destination
+                if (outputFile.exists() && outputFile.text.contains("<error ")) {
+                    throw new GradleException("There were checkstyle warnings! For more info check $outputFile")
+                }
+        }
+    }
+}
+
+apply plugin: 'pmd'
+
+pmd {
+    toolVersion = '6.8.0'
+    ruleSets = []
+    ruleSetFiles = files("$rootDir/config/pmd/ruleset.xml")
+}
+
+apply plugin: 'jacoco'
+
+jacoco{
+    toolVersion = "0.8.2"
+}
+test.finalizedBy jacocoTestReport
+
+jacocoTestReport {
+    reports {
+        html {
+            enabled true
+        }
+    }
+
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    exclude: [
+                            '**/gonuclei/grpc/**',
+                            '**/gonuclei/config/redis/**',
+                    ])
+        })
+    }
+}
+
+
+
+    
+}
+
+
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+repositories {
+    jcenter()
+    mavenCentral()
+    maven { url 'http://172.16.0.32:9090/artifactory/libs-snapshot-local' }
+}
+
+
+subprojects {
+
+repositories {
+    jcenter()
+    mavenCentral()
+    maven { url 'http://172.16.0.32:9090/artifactory/libs-snapshot-local' }
+}
+
+dependencies{
+    
+        implementation('org.springframework.boot:spring-boot-starter')
+        
+        testImplementation('org.springframework.boot:spring-boot-starter-test')
+    
+        
+        implementation('com.bizdirect:bizdirect-spring-boot-starter-rest-client:2.0.7-SNAPSHOT')
+        
+        
+        implementation('org.javassist:javassist:3.24.0-GA')
+        
+        
+        implementation('javax.xml.bind:jaxb-api:2.3.1')
+        
+        
+        implementation('javax.validation:validation-api:2.0.0.Final')
+        
+        
+        testImplementation('org.mockito:mockito-core:1.9.5')
+    
+        
+        testImplementation('junit:junit:4.12')
+    
+        
+        implementation('org.mapstruct:mapstruct-jdk8:1.2.0.Final')
+        
+        
+        implementation('org.mapstruct:mapstruct-processor:1.2.0.Final')
+        
+}
+
+
+}    
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}
+
+
+
